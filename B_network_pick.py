@@ -280,16 +280,16 @@ if __name__ == '__main__':
     looper = trainvalFormation(file_trans_input, file_trans_output, 5, 'specified')
     looper.specifybyloading()
     looper.loop_files_transfer(1)
-    SUMMARY = False
+    SUMMARY = True
     if SUMMARY:
         nn = Network()
-        model, name = nn.CNNForest('spec', 'Inception', 8)
+        model, name = nn.CNNForest('spec', 'Regular', 8)
         model.summary()
     else:
         sys.stdout = logger(filename=os.path.join(os.getcwd(),'Newfeature.log'))
         folders = pathpoper()
         nn = Network()
-        print('This time correct features are applied....')
+        print('This time corrected features are applied....')
         st = time.time()
         for feature_type in ('spec','mfcc'):
             for module_type in ('regular','residual','inception'):

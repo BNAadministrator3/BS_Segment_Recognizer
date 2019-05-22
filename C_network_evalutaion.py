@@ -81,15 +81,15 @@ class oneInputNetwork(): #this class is highly specific
         level_m2 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h2)  # 池化层
         level_h3 = ResiBlock(128)(level_m2)
         level_m3 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h3)  # 池化层
-        level_h4 = ResiBlock(256)(level_m3)
-        level_m4 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h4)  # 池化层
-        flayer = GlobalAveragePooling2D()(level_m4)
+        # level_h4 = ResiBlock(256)(level_m3)
+        # level_m4 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h4)  # 池化层
+        flayer = GlobalAveragePooling2D()(level_m3)
         fc1 = Dense(CLASS_NUM, use_bias=True, kernel_initializer='he_normal')(flayer)  # 全连接层
         y_pred = Activation('softmax')(fc1)
 
         self.residualCNNmodel = Model(inputs=self.model_input, outputs=y_pred)
-        print('Residual cnn model with spec feature and 8 layers are estabished.')
-        self.residualCNNmodelname = 'spec_Residual_8'
+        print('Residual cnn model with spec feature and 6 layers are estabished.')
+        self.residualCNNmodelname = 'spec_Residual_6'
         return self.residualCNNmodel, self.residualCNNmodelname
 
     def __CreateInceptionModel__(self):
@@ -101,13 +101,15 @@ class oneInputNetwork(): #this class is highly specific
         level_m3 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h3)  # 池化层
         level_h4 = XcepBlock(256)(level_m3)
         level_m4 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h4)  # 池化层
-        flayer = GlobalAveragePooling2D()(level_m4)
+        level_h5 = XcepBlock(512)(level_m4)
+        level_m5 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(level_h5)  # 池化层
+        flayer = GlobalAveragePooling2D()(level_m5)
         fc1 = Dense(CLASS_NUM, use_bias=True, kernel_initializer='he_normal')(flayer)  # 全连接层
         y_pred = Activation('softmax')(fc1)
 
         self.inceptionCNNmodel = Model(inputs=self.model_input, outputs=y_pred)
-        print('Inception cnn model with spec feature and 8 layers are estabished.')
-        self.inceptionCNNmodelname = 'spec_Inception_8'
+        print('Inception cnn model with spec feature and 10 layers are estabished.')
+        self.inceptionCNNmodelname = 'spec_Inception_10'
         return self.inceptionCNNmodel, self.inceptionCNNmodelname
 
     def CNNmodelTrainingSetting(self,model):
@@ -209,7 +211,8 @@ if __name__ == '__main__':
 
     ev = time.time()
     # 1. initialize the dataset
-    sys.stdout = logger()
+    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','Newfeature_evaluationresults.log'))
+    print('This time the corrected features are applied....')
     print()
     print(40 * '-' + 'NEWCHECKING:ROUND_1' + 40 * '-')
     print()

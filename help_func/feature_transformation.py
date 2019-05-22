@@ -45,7 +45,7 @@ def GetFrequencyFeatures(wavsignal, fs, feature_dimension = 200,frame_length = 4
 		data_input[i] = data_line[0:nfft//2]  # 设置为400除以2的值（即200）是取一半数据，因为是对称的
 
 	# print(data_input.shape)
-	data_input = np.log(data_input )
+	data_input = np.log(data_input)
 	data_input = (data_input - np.min(data_input)) / np.ptp(data_input)
 	# data_input = (data_input - data_input.mean()) / data_input.std()
 	return data_input

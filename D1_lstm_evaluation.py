@@ -72,7 +72,7 @@ class comparativeNetwork():
 if __name__ == '__main__':
     from keras.backend.tensorflow_backend import set_session
     import gc
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # only display error and warning; for 1: all info; for 3: only error.
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True  # 不全部占满显�? 按需分配
@@ -83,16 +83,17 @@ if __name__ == '__main__':
     looper = trainvalFormation(file_trans_input, file_trans_output, 5, 'specified')
     looper.specifybyloading()
 
-    basedatapath = '/home/zhaok14/example/PycharmProjects/setsail/5foldCNNdesign/dataset/constructed'
-    valdatapath = os.path.join(os.getcwd(),'dataset','constructed','val')
-    testdatapath = os.path.join(os.getcwd(),'dataset','constructed','test')
+    basedatapath = '/home/zhaok14/example/PycharmProjects/setsail/5foldCNNdesign/dataset/constructed2'
+    valdatapath = os.path.join(os.getcwd(),'dataset','constructed2','val')
+    testdatapath = os.path.join(os.getcwd(),'dataset','constructed2','test')
     report1 = [valdatapath,'validation']
     report2 = [testdatapath, 'test']
 
     ev = time.time()
     # 1. initialize the dataset
-    sys.stdout = logger()
+    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','lstmresults.log'))
     # 2. for every single rounds of evaluation, we need to train the models.
+    print('Note lstm is with mfcc feature, so we do not need to run the codes again....')
     for i in (0,1,2,3,4):
         strg = 'NEWCHECKING:ROUND_{}'.format(str(i))
         print()
