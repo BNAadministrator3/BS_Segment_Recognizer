@@ -6,16 +6,17 @@ from sklearn.model_selection import StratifiedKFold
 # from sklearn.metrics import accuracy_score
 from sklearn import svm
 
-from help_func.feature_transformation import read_wav_data, SimpleMfccFeatures
+from help_func.feature_transformation import read_wav_data, SimpleMfccFeatures, GetFrequencyFeatures
 from B_network_pick import logger
 
-def skstyleDataset(input_folder):
+def skstyleDataset(input_folder,check_num, stft_spec = False):
 
+    assert(isinstance(check_num,int))
     feature = []
     target = []
     folders = os.listdir(input_folder)
     # place a self-check
-    if len(folders) != 20:
+    if len(folders) != check_num:
         print('error occurred when cheking subject numbers.')
         assert (0)
     else:
@@ -26,7 +27,10 @@ def skstyleDataset(input_folder):
                 for file in files:
                     path = os.path.join(subf_bowel,file)
                     wavsignal, fs = read_wav_data(path)
-                    data_input = SimpleMfccFeatures(wavsignal, fs)
+                    if stft_spec == True:
+                        data_input = GetFrequencyFeatures(wavsignal, fs, 200, 400, shift=160)
+                    else:
+                        data_input = SimpleMfccFeatures(wavsignal, fs)
                     data_input = np.reshape(data_input,[-1])
                     feature.append(data_input)
                     target.append(1)
@@ -37,7 +41,10 @@ def skstyleDataset(input_folder):
                 for file in files:
                     path = os.path.join(subf_non, file)
                     wavsignal, fs = read_wav_data(path)
-                    data_input = SimpleMfccFeatures(wavsignal, fs)
+                    if stft_spec == True:
+                        data_input = GetFrequencyFeatures(wavsignal, fs, 200, 400, shift=160)
+                    else:
+                        data_input = SimpleMfccFeatures(wavsignal, fs)
                     data_input = np.reshape(data_input, [-1])
                     feature.append(data_input)
                     target.append(0)
@@ -68,14 +75,15 @@ def perf_measure(y_truth, y_hat):
 if __name__ == '__main__':
     datadir = '/home/zhaok14/example/PycharmProjects/setsail/5foldCNNdesign/dataset/scattered/standard1'
     dur = time.time()
-    features, targets = skstyleDataset(datadir)
+    features, targets = skstyleDataset(datadir,20)
     print('dataset formation time: {}s.'.format(round(time.time()-dur,2)))
     skf = StratifiedKFold(n_splits=5,shuffle=True)
     i = 0
     test_recall = []
     test_reject = []
     test_accur = []
-    sys.stdout = logger()
+    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','spec_svmresults.log' ))
+    print('In this running the svm is all-the-same with the stft feature...')
     for train_index, test_index in skf.split(features, targets):
         strg = 'NEWCHECKING:ROUND_{}'.format(str(i))
         print()
@@ -119,7 +127,7 @@ if __name__ == '__main__':
         mean = np.mean(words)
         std = np.std(words)
         print('5 fold cross validation results:')
-        print('{}: {}±{}'.format( name,round(mean,2),round(std,3) ) )
+        print('{}: {}±{}'.format( name,round(mean,4),round(std,4) ) )
         # print('official accuracy is: {}'.format(accuracy_score(y_train, train_pred)))
 
     # scores = cross_val_score(clf, features, targets, cv=5)

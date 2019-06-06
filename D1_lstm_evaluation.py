@@ -6,7 +6,7 @@ import sys
 from A_form_trainval import AUDIO_LENGTH, CLASS_NUM
 from A_form_trainval import trainvalFormation
 from B_network_pick import operation, logger
-from C_network_evalutaion import evaluation
+from C1_network_evaluation import evaluation
 from help_func.utilities import focal_loss
 #neural network package
 from keras import optimizers
@@ -26,7 +26,7 @@ class folderoperation():
         self.parentdir = parentdir
         if not self.parentdir:
             self.parentdir = os.getcwd()
-        self.base = os.path.join(self.parentdir, 'LSTMevaluation')
+        self.base = os.path.join(self.parentdir, 'LSTMevaluation','stft')
 
     def creation(self):
         for i in range(self.fold_number):
@@ -44,17 +44,17 @@ class folderoperation():
 class comparativeNetwork():
     def __init__(self):
         self.featuretype = 'spec'
-        input_shape = (AUDIO_LENGTH, 26, 1)
+        input_shape = (AUDIO_LENGTH, 200, 1)
         self.model_input = Input(shape=input_shape)
-        print('to mark that the feature type is %s.' % self.featuretype.upper())
+        print('to mark that the feature type is genuinely %s.' % self.featuretype.upper())
 
     def CreateLstmModel(self):
-        x = Reshape((AUDIO_LENGTH, 26), name='squeeze')(self.model_input)
+        x = Reshape((AUDIO_LENGTH, 200), name='squeeze')(self.model_input)
         y = LSTM(256,return_sequences=False)(x)  # computation complexity
         y_pred = Dense(CLASS_NUM, activation='softmax')(y)
         self.lstmmodel = Model(inputs=self.model_input, outputs=y_pred)
-        self.lstmmodelname = 'mfcc_lstm_256'
-        print('The lstm model with mfcc featue and 256 states is established.')
+        self.lstmmodelname = self.featuretype + '_lstm_256'
+        print('The lstm model with {} featue and 256 states is established.'.format(self.featuretype))
         return self.lstmmodel,self.lstmmodelname
 
     def ModelTrainingSetting(self,model):
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     set_session(tf.Session(config=config))
 
     file_trans_input = os.path.join(os.getcwd(), 'dataset', 'scattered', 'standard1')
-    file_trans_output = os.path.join(os.getcwd(), 'dataset', 'constructed')
+    file_trans_output = os.path.join(os.getcwd(), 'dataset', 'constructed2')
     looper = trainvalFormation(file_trans_input, file_trans_output, 5, 'specified')
     looper.specifybyloading()
 
@@ -91,9 +91,9 @@ if __name__ == '__main__':
 
     ev = time.time()
     # 1. initialize the dataset
-    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','lstmresults.log'))
+    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','spec_lstmresults.log' ))
     # 2. for every single rounds of evaluation, we need to train the models.
-    print('Note lstm is with mfcc feature, so we do not need to run the codes again....')
+    print('Note this time lstm is with the upgraded spec feature....')
     for i in (0,1,2,3,4):
         strg = 'NEWCHECKING:ROUND_{}'.format(str(i))
         print()
@@ -109,10 +109,10 @@ if __name__ == '__main__':
         nn.CreateLstmModel()
         nn.ModelTrainingSetting(nn.lstmmodel)
         print('this checking we do need training the lstm model..')
-        path = os.path.join( os.getcwd(),'LSTMevaluation','i=' + str(i) )
+        path = os.path.join( os.getcwd(),'LSTMevaluation','stft','i=' + str(i) )
         # 4.3 train individual networks
         controller = operation(nn.lstmmodel, nn.lstmmodelname, path)
-        controller.train(basedatapath, 'mfcc')
+        controller.train(basedatapath, 'spec')
         gc.collect()
         # 4.4 rebuild the individual networks and load the weights
         print(90 * '=')
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         newnn.CreateLstmModel()
         newnn.ModelweightsLoading(newnn.lstmmodel,path)
         print('for round_{}:'.format(str(i)))
-        evaluation(report1, report2, newnn.lstmmodel, newnn.lstmmodelname,featureType='mfcc')
+        evaluation(report1, report2, newnn.lstmmodel, newnn.lstmmodelname,featureType='spec')
         gc.collect()
     en = time.time() - ev
     hour = en // 3600

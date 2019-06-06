@@ -79,7 +79,6 @@ img = cv2.applyColorMap(nspec, cv2.COLORMAP_BONE)
 # savepath = os.path.join(os.getcwd(), 'trial.jpg' )
 # plt.savefig(savepath,bbox_inches='tight')
 
-
 # img = cv2.imread(savepath)
 heatmap = cv2.resize(heatmap, (spec.shape[1], spec.shape[0]))
 heatmap = np.uint8(255 * heatmap)

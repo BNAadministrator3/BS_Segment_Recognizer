@@ -5,10 +5,10 @@ import os
 import random
 import shutil
 import time
-import numpy as np
 import keras
 from keras.layers import *
 import json
+from distutils.dir_util import copy_tree
 
 
 from help_func.feature_transformation import GetFrequencyFeatures, read_wav_data, SimpleMfccFeatures
@@ -121,6 +121,45 @@ class trainvalFormation():
         except:
             print('folder creation fails.')
             assert(0)
+
+    def subjects_transfer(self,subject_container):
+        if os.path.exists(subject_container):
+            shutil.rmtree(subject_container)
+        os.makedirs(subject_container)
+        for i in range(self.fold_number):
+            strs = 'fold_' + str(i)
+            folders = self.lookup_table[strs]
+            for name in folders:
+                src_folder = os.path.join(self.input_folder, name) #copy all content under src to dst
+                dst_folder = os.path.join(subject_container,name)
+                if os.path.exists(dst_folder):
+                    shutil.rmtree(dst_folder)
+                os.makedirs(dst_folder)
+                assert(os.path.exists(src_folder))
+                # copy_tree(src_folder,dst_folder)
+                self.asic_copytree(src_folder,dst_folder)
+
+    def asic_copytree(self,src_folder,dst_folder):
+        dst_bowel = os.path.join( dst_folder,'bowels' )
+        os.makedirs(dst_bowel)
+        dst_non = os.path.join( dst_folder,'non' )
+        os.makedirs(dst_non)
+        src_bowel = os.path.join(src_folder, 'bowels')
+        src_non = os.path.join(src_folder, 'non')
+        for files in os.listdir(src_bowel):
+            path = os.path.join(src_bowel, files)
+            if os.path.isfile(path):
+                shutil.copy(path, dst_bowel)
+        for files in os.listdir(src_non):
+            path = os.path.join(src_non, files)
+            if os.path.isfile(path):
+                shutil.copy(path, dst_non)
+        len_src_bowel = len(os.listdir(src_bowel))
+        len_src_non = len(os.listdir(src_non))
+        len_dst_bowel = len(os.listdir(dst_bowel))
+        len_dst_non = len(os.listdir(dst_non))
+        assert(len_src_bowel == len_dst_bowel)
+        assert(len_src_non == len_dst_non)
 
     def files_transfer(self):
         self.__form_train_val_test__()

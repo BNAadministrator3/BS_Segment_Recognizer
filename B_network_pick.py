@@ -50,6 +50,48 @@ class Network():
         modelname = feature_type+'_'+module_type+'_'+str(layer_counts)
         return model,modelname
 
+    def LSTMbush(self, unit_counts, feature_type='MFCC'):
+        assert(unit_counts in (64,128,256))
+        feature_length = 200 if feature_type == 'SPEC' else 26
+        input_shape = (AUDIO_LENGTH, feature_length, 1)
+        X_input = Input(name='the_input', shape=input_shape)
+        x = Reshape((AUDIO_LENGTH, feature_length), name='squeeze')(X_input)
+        y = LSTM(unit_counts, return_sequences=False)(x)  # computation complexity
+        y_pred = Dense(CLASS_NUM, activation='softmax')(y)
+        lstmmodel = Model(inputs=X_input, outputs=y_pred)
+        lstmmodelname = feature_type.lower() + '_lstm_'+str(unit_counts)
+        print('The lstm model with {} featue and {} states is established.'.format(feature_type.lower(), str(unit_counts)))
+        self.ModelTrainingSetting(lstmmodel)
+        return lstmmodel, lstmmodelname
+
+    def FCbush(self,unit_counts, feature_type='MFCC'):
+        assert(unit_counts in (128, 256, 500, 1000))
+        feature_length = 200 if feature_type == 'SPEC' else 26
+        input_shape = (AUDIO_LENGTH, feature_length, 1)
+        X_input = Input(name='the_input', shape=input_shape)
+        x = Flatten(name='squeeze')(X_input)
+        y1 = Dense(1000, kernel_regularizer=regularizers.l2(0.0005), activation='relu')(x)  # computation complexity
+        y2 = Dense(1000, kernel_regularizer=regularizers.l2(0.0005), activation='relu')(y1)
+        y3 = Dense(unit_counts, kernel_regularizer=regularizers.l2(0.0005), activation='relu')(y2)
+        y_pred = Dense(CLASS_NUM, activation='softmax')(y3)
+        fcmodel = Model(inputs=X_input, outputs=y_pred)
+        fcmodelname = feature_type.lower() + '_fc_' + str(unit_counts)
+        print('The fc model with {} featue and [1000 1000 {}] layers is established.'.format(feature_type.lower(),str(unit_counts)))
+        self.ModelTrainingSetting(fcmodel)
+        return fcmodel, fcmodelname
+
+    def ModelTrainingSetting(self, model):
+        optimizer = optimizers.Adadelta()
+        model.compile(optimizer=optimizer, loss=[focal_loss(alpha=0.25, gamma=2)])
+
+    def ModelWeigthsLoading(self, model, weightsdir):
+        WeightsFile = [i for i in os.listdir(weightsdir) if 'weights' in i]
+        assert(len(WeightsFile)==1)
+        model.load_weights(os.path.join(weightsdir,WeightsFile[0]))
+        for layer in model.layers:
+            layer.trainable = False
+
+
 class operation():
     def __init__(self,model,modelname,basePath):
         self.model = model
@@ -123,10 +165,11 @@ class operation():
         if 'epoch' in self.metrics.keys():
             print('The best metric (without restriction) took place in the epoch: ', self.metrics['epoch'])
             print('Sensitivity: {}; Specificity: {}; Score: {}; Accuracy: {}'.format(self.metrics['sensitivity'],self.metrics['specificity'],self.metrics['score'],self.metrics['accuracy']))
-            self.TestGenerability(feature_type = feature_type, weightspath=self.savpath[1])
+            # self.TestGenerability(feature_type = feature_type, weightspath=self.savpath[1])
         else:
             print('The best metric (without restriction) is not found. Done!')
         print('Training duration: {}s'.format(round(duration, 2)))
+        return self.metrics['accuracy']
 
     def TestModel(self, sess, writer, feature_type, datapath='', str_dataset='eval', data_count=32, show_ratio=True, step=0):
         '''
