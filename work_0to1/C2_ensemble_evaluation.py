@@ -1,8 +1,7 @@
-from B_network_pick import operation, logger
-from A_form_trainval import trainvalFormation, Testing
+from work_0to1.B_network_pick import logger
+from work_0to1.A_form_trainval import trainvalFormation
 from C1_network_evalutaion import oneInputNetwork, evaluation
 
-from keras import optimizers
 import tensorflow as tf
 from keras.models import Model
 from keras.layers import *
@@ -49,7 +48,7 @@ class flexible_average(oneInputNetwork): #this class is highly specific
 
 if __name__ == '__main__':
     from keras.backend.tensorflow_backend import set_session
-    import gc
+
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # only display error and warning; for 1: all info; for 3: only error.
     config = tf.ConfigProto()

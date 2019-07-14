@@ -3,11 +3,10 @@ import shutil
 import time
 import sys
 
-from A_form_trainval import AUDIO_LENGTH, CLASS_NUM
-from A_form_trainval import trainvalFormation
-from B_network_pick import operation, logger
-from C1_network_evaluation import evaluation
-from help_func.utilities import focal_loss
+from work_0to1.A_form_trainval import AUDIO_LENGTH, CLASS_NUM
+from work_0to1.A_form_trainval import trainvalFormation
+from work_0to1.B_network_pick import operation, logger
+from C1_network_evalutaion import evaluation
 #neural network package
 from keras import optimizers
 import tensorflow as tf
@@ -26,7 +25,7 @@ class folderoperation():
         self.parentdir = parentdir
         if not self.parentdir:
             self.parentdir = os.getcwd()
-        self.base = os.path.join(self.parentdir, 'LSTMevaluation','stft')
+        self.base = os.path.join(self.parentdir, 'DNNevaluation','stft')
 
     def creation(self):
         for i in range(self.fold_number):
@@ -48,23 +47,30 @@ class comparativeNetwork():
         self.model_input = Input(shape=input_shape)
         print('to mark that the feature type is genuinely %s.' % self.featuretype.upper())
 
-    def CreateLstmModel(self):
-        x = Reshape((AUDIO_LENGTH, 200), name='squeeze')(self.model_input)
-        y = LSTM(256,return_sequences=False)(x)  # computation complexity
-        y_pred = Dense(CLASS_NUM, activation='softmax')(y)
-        self.lstmmodel = Model(inputs=self.model_input, outputs=y_pred)
-        self.lstmmodelname = self.featuretype + '_lstm_256'
-        print('The lstm model with {} featue and 256 states is established.'.format(self.featuretype))
-        return self.lstmmodel,self.lstmmodelname
+    def CreateDnnModel(self):
+        x = Flatten(name='squeeze')(self.model_input)
+        y1 = Dense(1000,kernel_regularizer=regularizers.l2(0.5),activation='relu')(x)  # computation complexity
+        y1 = Dropout(0.9)(y1)
+        y2 = Dense(1000,kernel_regularizer=regularizers.l2(0.5),activation='relu')(y1)
+        y2 = Dropout(0.9)(y2)
+        y3 = Dense(1000,kernel_regularizer=regularizers.l2(0.5),activation='relu')(y2)
+        y3 = Dropout(0.9)(y3)
+        y_pred = Dense(CLASS_NUM, activation='softmax')(y3)
+        self.dnnmodel = Model(inputs=self.model_input, outputs=y_pred)
+        self.dnnmodelname = self.featuretype+'_dnn_1000'
+        print('The dnn model with {} featue and [1000 1000 1000] layers is established.'.format(self.featuretype))
+        # print(self.dnnmodel.summary())
+        return self.dnnmodel,self.dnnmodelname
 
     def ModelTrainingSetting(self,model):
         optimizer = optimizers.Adadelta()
-        model.compile(optimizer=optimizer, loss=[focal_loss(alpha=0.25, gamma=2)])
+        #model.compile(optimizer=optimizer, loss=[focal_loss(alpha=0.25, gamma=2)])
+        model.compile(optimizer=optimizer,loss='binary_crossentropy')
 
-    def ModelweightsLoading(self,model,lstmdir):
-        WeightsFile = [i for i in os.listdir(lstmdir) if 'weights' in i]
+    def ModelweightsLoading(self,model,dnndir):
+        WeightsFile = [i for i in os.listdir(dnndir) if 'weights' in i]
         if len(WeightsFile)==1:
-            model.load_weights(os.path.join(lstmdir,WeightsFile[0]))
+            model.load_weights(os.path.join(dnndir,WeightsFile[0]))
         else:
             print('multiple or no weights files detected in the specified directory ')
             assert(0)
@@ -72,28 +78,27 @@ class comparativeNetwork():
 if __name__ == '__main__':
     from keras.backend.tensorflow_backend import set_session
     import gc
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # only display error and warning; for 1: all info; for 3: only error.
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True  # 不全部占满显�? 按需分配
     set_session(tf.Session(config=config))
 
     file_trans_input = os.path.join(os.getcwd(), 'dataset', 'scattered', 'standard1')
-    file_trans_output = os.path.join(os.getcwd(), 'dataset', 'constructed2')
+    file_trans_output = os.path.join(os.getcwd(), 'dataset', 'constructed')
     looper = trainvalFormation(file_trans_input, file_trans_output, 5, 'specified')
     looper.specifybyloading()
 
-    basedatapath = '/home/zhaok14/example/PycharmProjects/setsail/5foldCNNdesign/dataset/constructed2'
-    valdatapath = os.path.join(os.getcwd(),'dataset','constructed2','val')
-    testdatapath = os.path.join(os.getcwd(),'dataset','constructed2','test')
+    basedatapath = '/home/zhaok14/example/PycharmProjects/setsail/5foldCNNdesign/dataset/constructed'
+    valdatapath = os.path.join(os.getcwd(),'dataset','constructed','val')
+    testdatapath = os.path.join(os.getcwd(),'dataset','constructed','test')
     report1 = [valdatapath,'validation']
     report2 = [testdatapath, 'test']
 
     ev = time.time()
     # 1. initialize the dataset
-    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','spec_lstmresults.log' ))
+    sys.stdout = logger(filename=os.path.join(os.getcwd(),'log&&materials','spec_fcresults.log' ))
     # 2. for every single rounds of evaluation, we need to train the models.
-    print('Note this time lstm is with the upgraded spec feature....')
     for i in (0,1,2,3,4):
         strg = 'NEWCHECKING:ROUND_{}'.format(str(i))
         print()
@@ -106,23 +111,23 @@ if __name__ == '__main__':
         print('file transformation finished. time:{}s'.format(dur))
         # 2.2 build individual networks
         nn = comparativeNetwork()
-        nn.CreateLstmModel()
-        nn.ModelTrainingSetting(nn.lstmmodel)
-        print('this checking we do need training the lstm model..')
-        path = os.path.join( os.getcwd(),'LSTMevaluation','stft','i=' + str(i) )
+        nn.CreateDnnModel()
+        nn.ModelTrainingSetting(nn.dnnmodel)
+        print('this checking we do need training the fc model..')
+        path = os.path.join( os.getcwd(),'DNNevaluation','stft','i=' + str(i) )
         # 4.3 train individual networks
-        controller = operation(nn.lstmmodel, nn.lstmmodelname, path)
+        controller = operation(nn.dnnmodel, nn.dnnmodelname, path)
         controller.train(basedatapath, 'spec')
         gc.collect()
         # 4.4 rebuild the individual networks and load the weights
         print(90 * '=')
         print('')
-        print('!Having finish the training ,let us now rebuild the lstm network and load the corresponding weights!')
+        print('!Having finish the training ,let us now rebuild the fc network and load the corresponding weights!')
         newnn = comparativeNetwork()
-        newnn.CreateLstmModel()
-        newnn.ModelweightsLoading(newnn.lstmmodel,path)
+        newnn.CreateDnnModel()
+        newnn.ModelweightsLoading(newnn.dnnmodel,path)
         print('for round_{}:'.format(str(i)))
-        evaluation(report1, report2, newnn.lstmmodel, newnn.lstmmodelname,featureType='spec')
+        evaluation(report1, report2, newnn.dnnmodel, newnn.dnnmodelname,featureType='spec')
         gc.collect()
     en = time.time() - ev
     hour = en // 3600

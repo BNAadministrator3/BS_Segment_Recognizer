@@ -7,7 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn import svm
 
 from help_func.feature_transformation import read_wav_data, SimpleMfccFeatures, GetFrequencyFeatures
-from B_network_pick import logger
+from work_0to1.B_network_pick import logger
 
 def skstyleDataset(input_folder,check_num, stft_spec = False):
 

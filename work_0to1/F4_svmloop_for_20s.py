@@ -8,9 +8,9 @@ from sklearn.model_selection import GridSearchCV
 
 import tensorflow as tf
 
-from A_form_trainval import trainvalFormation
-from B_network_pick import operation, logger, Network
-from D3_svm_evaluation import skstyleDataset,perf_measure
+from work_0to1.A_form_trainval import trainvalFormation
+from work_0to1.B_network_pick import logger
+from work_0to1.D3_svm_evaluation import skstyleDataset,perf_measure
 
 if __name__ == '__main__':
     from keras.backend.tensorflow_backend import set_session

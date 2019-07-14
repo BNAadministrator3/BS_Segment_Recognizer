@@ -12,8 +12,8 @@ from keras.models import Model
 from help_func.evaluation import Compare2,plot_confusion_matrix
 from help_func.utilities import focal_loss, ReguBlock, ResiBlock, XcepBlock
 
-from A_form_trainval import AUDIO_LENGTH, CLASS_NUM
-from A_form_trainval import DataSpeech, Testing, clrdir, pathpoper,stringCheck, trainvalFormation
+from work_0to1.A_form_trainval import AUDIO_LENGTH, CLASS_NUM
+from work_0to1.A_form_trainval import DataSpeech, Testing, clrdir, pathpoper,stringCheck, trainvalFormation
 
 class Network():
     def __init__(self):
